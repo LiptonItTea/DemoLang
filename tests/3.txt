@@ -1,0 +1,58 @@
+int v1 = 0;
+{
+  int v2 = 1;
+}
+
+int input_int(string name, int c) {
+    int x = 8;
+    if (name != "") {
+        print("Введите " + name + ": ");
+    } else {
+        string s = "Введите число: ";
+        print(s);
+    }
+    return  to_int(read());
+}
+
+int a = input_int("a", 2);
+int b = input_int("", 2);
+int c = a + b;
+println("c = a + b = " + c);
+println(c);
+
+
+for (int i = 0; i < 30; i = i + 1) {
+  float ii = i;
+  if (i % 2 == 0 && i % 3 == 0 && (ii < 10 || ii > 20))
+    println(i);
+}
+
+println("a" > "b");
+println("a" >= "b");
+println("a" >= "a");
+println("a" < "b");
+println("a" <= "b");
+println("a" <= "a");
+println("a" == "a");
+println("a" != "a");
+println("a" == "b");
+println("a" != "b");
+
+
+int factorial(int a) {
+  if (a <= 1) {
+    return 1;
+  } else {
+    return a * factorial(a - 1);
+  }
+}
+
+println(factorial(5));
+
+
+float sqrt(float v) {
+  if (v > 1) {
+
+  }
+}
+

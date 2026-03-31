@@ -1,0 +1,14 @@
+int input_int(string name) {
+    if (name != "") {
+        print("Введите " + name + ": ");
+    }
+    return to_int(read());
+
+    // bool a() { }
+}
+int input_int2(string name, int a, int name2) {
+    if (name != "") {
+        print("Введите " + name + ": ");
+    }
+    return "";
+}

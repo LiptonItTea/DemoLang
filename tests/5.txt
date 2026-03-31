@@ -1,0 +1,29 @@
+float EPS = 1e-9;
+
+float sqrt(float x) {
+    if (x < 0) {
+        return -1;
+    }
+
+    // float a = (x < 1) ? 0 : 1,
+    //       b = (x < 1) ? 1 : x;
+    float a = 1, b = x;
+    if (x < 1) {
+        a = 0;
+        b = 1;
+    }
+
+    while (b - a > EPS) {
+        float c = (a + b) / 2;
+        if (c * c > x) {
+            b = c;
+        } else {
+            a = c;
+        }
+    }
+
+    return (a + b) / 2;
+}
+
+
+println(sqrt(2));
