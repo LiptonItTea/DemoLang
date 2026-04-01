@@ -1,89 +1,112 @@
-from pathlib import Path
-from typing import TypeVar
+from __future__ import annotations
 
-from lark import Lark, Transformer, v_args, GrammarError, UnexpectedCharacters
+from pathlib import Path
+from typing import Any
+
+from lark import Lark, Transformer, UnexpectedInput
 
 from .ast import *
 from .errors import ParserException
 
-grammar_path = Path(__file__).parent / 'parser.lark'
-grammar = grammar_path.read_text()
+grammar_path = Path(__file__).parent / "parser.lark"
+grammar = grammar_path.read_text(encoding="utf-8")
+parser = Lark(grammar, start="start", parser="earley", propagate_positions=True)
 
 
-T = TypeVar('T')
-
-@v_args(meta=True)
 class ASTBuilder(Transformer):
-
-    def _process_meta(self, node: T, meta) -> T:
-        # line и column могут быть не заданы (для пустых альтернатив, видимо)
-        node.row = getattr(meta, 'line') if hasattr(meta, 'line') else None
-        node.col = getattr(meta, 'column') if hasattr(meta, 'column') else None
+    def _process_meta(self, node: Any, meta) -> Any:
+        if isinstance(node, AstNode):
+            node.row = getattr(meta, "line", None)
+            node.col = getattr(meta, "column", None)
         return node
 
-    # вначале идут методы, которые соответствуют именам синтаксических правил в грамматике
+    def _call_userfunc(self, tree, new_children=None):
+        children = new_children if new_children is not None else tree.children
+        try:
+            func = getattr(self, tree.data)
+        except AttributeError:
+            result = self.__default__(tree.data, children, tree.meta)
+        else:
+            result = func(*children)
+        return self._process_meta(result, tree.meta)
 
-    def type(self, meta, children) -> TypeNode:
-        result = TypeNode(str(children[0]))
-        return self._process_meta(result, meta)
+    def __default_token__(self, token):
+        return token
 
-    def block(self, meta, children) -> StmtListNode:
-        child = children[0]
-        return StmtListNode(child) if not isinstance(child, StmtListNode) else child
+    def stmt_return(self, value=None) -> StmtReturnNode:
+        return StmtReturnNode(value)
 
-    def func(self, meta, children) -> FuncNode:
-        result = FuncNode(children[0], children[1], list(children[2:-1]), children[-1])
-        return self._process_meta(result, meta)
+    def param_list(self, *params) -> ParamListNode:
+        return ParamListNode(*params)
 
-    def empty_expr(self, meta, children) -> LiteralNode:
-        return LiteralNode('true')
+    def call_arg_list(self, *args) -> CallArgListNode:
+        return CallArgListNode(*args)
 
-    # вызывается, если не найдем метод, соответствующий имени правила (data)
-    def __default__(self, data, children, meta) -> AstNode | str:
-        if isinstance(data, str) and data.upper() == data:
-            return data
+    def stmt_list(self, *stmts) -> StmtListNode:
+        return StmtListNode(*stmts)
 
-        result = None
+    def body(self, stmt_list: StmtListNode) -> StmtListNode:
+        return stmt_list
 
-        if data in ('prefix_dec', 'prefix_inc', 'suffix_dec', 'suffix_inc'):
-            op = IncDecOp[data.upper()]
-            result = IncDecNode(op, *children)
+    def type_custom(self, ident: IdentNode) -> TypeCustomNode:
+        return TypeCustomNode(ident)
 
-        if data in ('plus', 'minus', 'not'):
-            op = UnOp[data.upper()]
-            result = UnOpNode(op, *children)
+    def __getattr__(self, item):
+        if isinstance(item, str) and item.upper() == item:
+            return lambda x: x
 
-        if data in ('mul', 'div', 'mod',
-                    'add', 'sub',
-                    'gt', 'ge', 'lt', 'le',
-                    'eq', 'ne',
-                    'logic_and',
-                    'logic_or'):
-            op = BinOp[data.upper()]
-            result = BinOpNode(op, *children)
+        if item in (
+            "mul",
+            "div",
+            "add",
+            "sub",
+            "idv",
+            "mod",
+            "comp_lt",
+            "comp_gt",
+            "comp_le",
+            "comp_ge",
+            "comp_eq",
+            "comp_nq",
+            "logic_and",
+            "logic_or",
+        ):
+            return lambda *args: BinOpNode(BinOp[item.upper()], *args)
 
-        if not result:
-            try:
-                cls = eval(''.join(x.capitalize() or '_' for x in data.split('_')) + 'Node')
-                result = cls(*children)
-            except Exception as e:
-                # только для удобства отладки (для точки остановки на raise)
-                raise e
+        if item in (
+            "unary_inc",
+            "unary_dec",
+            "prefix_inc",
+            "prefix_dec",
+            "postfix_inc",
+            "postfix_dec",
+            "logic_not",
+        ):
+            return lambda *args: UnoOpNode(UnoOp[item.upper()], *args)
 
-        return self._process_meta(result, meta)
+        if item in (
+            "assign",
+            "assign_add",
+            "assign_sub",
+            "assign_mul",
+            "assign_div",
+            "assign_idv",
+            "assign_mod",
+        ):
+            return lambda *args: AssignNode(Assign[item.upper()], *args)
+
+        return lambda *args: eval("".join(x.capitalize() or "_" for x in item.split("_")) + "Node")(*args)
 
 
 def parse(program: str) -> StmtListNode:
     try:
-        parser = Lark(grammar, start="start", propagate_positions=True)
         parse_tree = parser.parse(str(program))
-    except UnexpectedCharacters as e:
-        allow = (t.pattern.value or t.pattern.raw if t.pattern.type == 'str' else a
-                 for a in e.allowed for t in parser.terminals if t.name == a)
-        error_msg = f'Ожидалось {', '.join(allow)}'
-        if hasattr(e, '_context'):
-            error_msg += f', получено:\n{e._context}\n'
-        raise ParserException(error_msg, row=e.line, col=e.column)
+    except UnexpectedInput as e:
+        context = e.get_context(str(program), span=40) if hasattr(e, "get_context") else ""
+        message = "Синтаксическая ошибка"
+        if context:
+            message += f":\n{context}"
+        raise ParserException(message, row=getattr(e, "line", None), col=getattr(e, "column", None))
 
     ast_tree: StmtListNode = ASTBuilder().transform(parse_tree)
     ast_tree.program = True

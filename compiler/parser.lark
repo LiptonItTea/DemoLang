@@ -1,105 +1,145 @@
-%import common.SIGNED_NUMBER
-//%import common.CNAME
-%import common.LETTER
-%import common.DIGIT
-//%import common.NEWLINE
+%import common.NUMBER
+%import common.CNAME
+%import common.NEWLINE
 %import common.WS
 %import common.ESCAPED_STRING
-%import common.CPP_COMMENT
-%import common.C_COMMENT
 
 %ignore WS
 
-COMMENT: CPP_COMMENT | C_COMMENT
+COMMENT: "/*" /.*?/s "*/"
+       | "//" /.*/ NEWLINE
 %ignore COMMENT
 
-BOOL: "true" | "false"
-IDENT: /(?!(if|else|while|for|break|continue|return|true|false))/ LETTER (LETTER | DIGIT | "_")*
+num: NUMBER
+ident: CNAME
+string: ESCAPED_STRING
+sq_string: /'[^']*'/
 
-literal: SIGNED_NUMBER | ESCAPED_STRING | BOOL
-ident: IDENT
+?type: "char"   -> type_simple_char
+     | "int"    -> type_simple_int
+     | "bool"   -> type_simple_bool
+     | "string" -> type_simple_string
+     | "double" -> type_simple_double
+     | "void"   -> type_simple_void
+     | ident    -> type_custom
+
+create_var: type var_decl ("," var_decl)*
+
+?var_decl: ident -> var_decl_simple
+         | ident "[" "]" -> var_decl_array
+         | ident "=" rvalue -> var_init
+         | ident "[" "]" "=" rvalue -> var_init_array
 
 ?lvalue: ident
+       | postfix_expr "[" rvalue "]" -> array_subscr
+       | postfix_expr "." ident -> access
 
-?inc_dec: "--" lvalue -> prefix_dec
-    | "++" lvalue -> prefix_inc
-    | lvalue "--" -> suffix_dec
-    | lvalue "++" -> suffix_inc
+?rvalue: assign_expr
 
-?primary: literal
-    | inc_dec
-    | lvalue
-    | "(" expr ")"
-    | call
+?assign_expr: ternary
+            | lvalue "=" assign_expr -> assign
+            | lvalue "+=" assign_expr -> assign_add
+            | lvalue "-=" assign_expr -> assign_sub
+            | lvalue "*=" assign_expr -> assign_mul
+            | lvalue "/=" assign_expr -> assign_div
+            | lvalue "//=" assign_expr -> assign_idv
+            | lvalue "%=" assign_expr -> assign_mod
 
-call: ident "(" (expr ("," expr)*)? ")"
-
-?unary: primary
-    | "+" unary -> plus
-    | "-" unary -> minus
-    | "!" unary -> not
-
-?mult: unary
-    | mult "*" unary    -> mul
-    | mult "/" unary    -> div
-    | mult "%" unary    -> mod
-
-?add: mult
-    | add "+" mult      -> add
-    | add "-" mult      -> sub
-
-?compare: add
-    | add ">" add         -> gt
-    | add ">=" add        -> ge
-    | add "<" add         -> lt
-    | add "<=" add        -> le
-
-?equals: compare
-    | compare "==" compare -> eq
-    | compare "!=" compare -> ne
-
-?logic_and: equals
-    | logic_and "&&" equals
+?ternary: logic_or
+        | logic_or "?" ternary ":" ternary
 
 ?logic_or: logic_and
-    | logic_or "||" logic_and
+         | logic_or "||" logic_and
 
-?expr: logic_or
+?logic_and: compare_eq
+          | logic_and "&&" compare_eq
 
-?expr_or_empty: expr
-    | -> empty_expr
+?compare_eq: compare
+           | compare_eq "==" compare -> comp_eq
+           | compare_eq "!=" compare -> comp_nq
 
-type: ident
+?compare: add
+        | compare "<" add -> comp_lt
+        | compare ">" add -> comp_gt
+        | compare "<=" add -> comp_le
+        | compare ">=" add -> comp_ge
 
-ident_assign: ident "=" expr -> assign
-assign: lvalue "=" expr -> assign
+?add: mult
+    | add "+" mult -> add
+    | add "-" mult -> sub
 
-vars_decl: type (ident | ident_assign) ("," (ident | ident_assign))*
+?mult: unary
+     | mult "*" unary -> mul
+     | mult "/" unary -> div
+     | mult "//" unary -> idv
+     | mult "%" unary -> mod
 
-?simple_stmt: call
-    | assign
-    | vars_decl
-    | "return" expr? -> return
-    | "break" -> break
-    | "continue" -> continue
+?unary: prefix
+      | "+" unary -> unary_inc
+      | "-" unary -> unary_dec
+      | "!" unary -> logic_not
 
-?stmt: simple_stmt ";"
-    | "{" stmt_list "}" -> block
-    | "if" "(" expr ")" stmp_or_empty ("else" stmp_or_empty)? -> if
-    | "while" "(" expr ")" stmp_or_empty -> while
-    | "for" "(" for_stmt_list ";" expr_or_empty ";" for_stmt_list ")" stmp_or_empty  -> for
-    | func
-    | inc_dec
+?prefix: postfix_expr
+       | "++" prefix -> prefix_inc
+       | "--" prefix -> prefix_dec
 
-?stmp_or_empty: stmt
-    | ";" -> stmt_list
+?postfix_expr: primary
+             | postfix_expr "[" rvalue "]" -> array_subscr
+             | postfix_expr "." ident -> access
+             | postfix_expr "(" call_arg_list ")" -> func_call
+             | postfix_expr "++" -> postfix_inc
+             | postfix_expr "--" -> postfix_dec
 
-func_param: type ident -> vars_decl
-func: type ident "(" (func_param ("," func_param)*)? ")" "{" stmt_list "}"
+?primary: num
+        | string
+        | sq_string
+        | ident
+        | "(" rvalue ")"
 
-?stmt_list: (stmt ";"*)*
-?for_stmt_list: vars_decl
-    | (simple_stmt ("," simple_stmt)*)? -> stmt_list
+call_arg_list: (rvalue ("," rvalue)*)?
+
+param_decl: type ident
+          | type ident "[" "]" -> array_param_decl
+
+param_list: (param_decl ("," param_decl)*)?
+
+?func_def: type ident "(" param_list ")" body
+
+struct_def: "struct" ident body
+
+?stmt_misc: "break" -> stmt_break
+          | "continue" -> stmt_continue
+          | "return" rvalue? -> stmt_return
+
+?stmt: rvalue
+     | create_var
+     | stmt_misc
+     | struct_def
+
+?stmt_closed: stmt ";"
+
+?body: "{" stmt_list "}"
+
+?for_init: create_var
+         | rvalue
+         |
+
+?for_cond: rvalue
+         |
+
+?for_next: rvalue
+         |
+
+?condition: "if" "(" rvalue ")" (stmt_closed | body) ("else" (stmt_closed | body))? -> condition_if
+          | "while" "(" rvalue ")" (stmt_closed | body) -> condition_while
+          | "do" (stmt_closed | body) "while" "(" rvalue ")" ";" -> condition_do_while
+          | "for" "(" for_init ";" for_cond ";" for_next ")" (stmt_closed | body) -> condition_for
+
+?stmt_general: stmt_closed
+             | condition
+             | func_def
+
+?stmt_list: (stmt_general ";"*)*
 
 ?prog: stmt_list
 
