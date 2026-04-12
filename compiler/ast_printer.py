@@ -53,8 +53,7 @@ class AstPrinter:
     def view_node(self, node: FuncDefNode) -> tuple[str, Sequence[AstNode]]:
         params = []
         for param in node.params.param_decls:
-            suffix = "[]" if isinstance(param, ArrayParamDeclNode) else ""
-            params.append(f"{param.type} {param.ident}{suffix}")
+            params.append(f"{param.type} {param.ident}")
         return f"{node.return_type} {node.func_name}({', '.join(params)})", (node.body,)
 
     @visitor.when(StructDefNode)

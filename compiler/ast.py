@@ -276,19 +276,6 @@ class VarDeclSimpleNode(VarDeclNode):
         return f"decl"
 
 
-class VarDeclArrayNode(VarDeclNode):
-    def __init__(self, name: IdentNode):
-        super().__init__()
-        self.name = name
-
-    @property
-    def childs(self) -> Tuple[AstNode, ...]:
-        return (self.name,)
-
-    def __str__(self) -> str:
-        return f"decl []"
-
-
 class VarInitNode(VarDeclNode):
     def __init__(self, name: IdentNode, value: AstNode):
         super().__init__()
@@ -301,20 +288,6 @@ class VarInitNode(VarDeclNode):
 
     def __str__(self) -> str:
         return f"init"
-
-
-class VarInitArrayNode(VarDeclNode):
-    def __init__(self, name: IdentNode, value: AstNode):
-        super().__init__()
-        self.name = name
-        self.value = value
-
-    @property
-    def childs(self) -> Tuple[AstNode, ...]:
-        return self.name, self.value
-
-    def __str__(self) -> str:
-        return f"init []"
 
 
 class CreateVarNode(AstNode):
@@ -565,20 +538,6 @@ class ParamDeclNode(AstNode):
 
     def __str__(self) -> str:
         return "param"
-
-
-class ArrayParamDeclNode(AstNode):
-    def __init__(self, type_: TypeNode, ident: IdentNode):
-        super().__init__()
-        self.type = type_
-        self.ident = ident
-
-    @property
-    def childs(self) -> Tuple[AstNode, ...]:
-        return self.type, self.ident
-
-    def __str__(self) -> str:
-        return "param[]"
 
 
 class ParamListNode(AstNode):

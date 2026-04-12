@@ -48,6 +48,15 @@ class ASTBuilder(Transformer):
     def body(self, stmt_list: StmtListNode) -> StmtListNode:
         return stmt_list
 
+    def array_suffix(self):
+        return "[]"
+
+    def type(self, base_type: TypeNode, *suffixes) -> TypeNode:
+        result: TypeNode = base_type
+        for _ in suffixes:
+            result = TypeArrNode(result)
+        return result
+
     def type_custom(self, ident: IdentNode) -> TypeCustomNode:
         return TypeCustomNode(ident)
 

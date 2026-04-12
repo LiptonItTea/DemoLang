@@ -15,21 +15,22 @@ ident: CNAME
 string: ESCAPED_STRING
 sq_string: /'[^']*'/
 
-?type: "char"   -> type_simple_char
-     | "int"    -> type_simple_int
-     | "bool"   -> type_simple_bool
-     | "string" -> type_simple_string
-     | "double" -> type_simple_double
-     | "float"  -> type_simple_float
-     | "void"   -> type_simple_void
-     | ident    -> type_custom
+?base_type: "char"   -> type_simple_char
+          | "int"    -> type_simple_int
+          | "bool"   -> type_simple_bool
+          | "string" -> type_simple_string
+          | "double" -> type_simple_double
+          | "float"  -> type_simple_float
+          | "void"   -> type_simple_void
+          | ident    -> type_custom
+
+array_suffix: "[" "]"
+type: base_type array_suffix*
 
 create_var: type var_decl ("," var_decl)*
 
 ?var_decl: ident -> var_decl_simple
-         | ident "[" "]" -> var_decl_array
          | ident "=" rvalue -> var_init
-         | ident "[" "]" "=" rvalue -> var_init_array
 
 ?lvalue: ident
        | postfix_expr "[" rvalue "]" -> array_subscr

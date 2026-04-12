@@ -41,9 +41,9 @@ z=0;
 struct Amogus {
     int a, b;
     char c;
-    string d[][];
+    float[][] d;
 };
 
 Amogus m;
-string test[];
+int[][] test;
 m.d = test;

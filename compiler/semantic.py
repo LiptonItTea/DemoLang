@@ -635,10 +635,7 @@ class SemanticChecker:
             semantic_error(node.type, "Переменные типа void не поддерживаются")
 
         for decl in node.var_decls:
-            if isinstance(decl, (VarDeclArrayNode, VarInitArrayNode)):
-                curr_type = TypeDesc.array_of(decl_type)
-            else:
-                curr_type = decl_type
+            curr_type = decl_type
 
             ident = scope.add_ident(IdentDesc(decl.name.name, curr_type))
             decl.name.node_type = curr_type
@@ -646,7 +643,7 @@ class SemanticChecker:
             decl.node_type = curr_type
             decl.node_ident = ident
 
-            if isinstance(decl, (VarInitNode, VarInitArrayNode)):
+            if isinstance(decl, VarInitNode):
                 decl.value.semantic_check(self, scope)
                 decl.value = type_convert(decl.value, curr_type, decl, "инициализатор")
 
@@ -726,10 +723,6 @@ class SemanticChecker:
     def semantic_check(self, node: ParamDeclNode, scope: IdentScope):
         node.node_type = resolve_type(node.type, scope)
 
-    @visitor.when(ArrayParamDeclNode)
-    def semantic_check(self, node: ArrayParamDeclNode, scope: IdentScope):
-        node.node_type = TypeDesc.array_of(resolve_type(node.type, scope))
-
     @visitor.when(FuncDefNode)
     def semantic_check(self, node: FuncDefNode, scope: IdentScope):
         if scope.parent is not None:
@@ -738,10 +731,7 @@ class SemanticChecker:
         return_type = resolve_type(node.return_type, scope)
         params: list[TypeDesc] = []
         for param in node.params.param_decls:
-            if isinstance(param, ArrayParamDeclNode):
-                params.append(TypeDesc.array_of(resolve_type(param.type, scope)))
-            else:
-                params.append(resolve_type(param.type, scope))
+            params.append(resolve_type(param.type, scope))
 
         func_type = TypeDesc.function(return_type, tuple(params))
         func_ident = scope.add_ident(IdentDesc(node.func_name.name, func_type))
@@ -783,10 +773,10 @@ class SemanticChecker:
                 semantic_error(stmt.type, "Поле типа void не поддерживается")
 
             for decl in stmt.var_decls:
-                if isinstance(decl, (VarInitNode, VarInitArrayNode)):
+                if isinstance(decl, VarInitNode):
                     semantic_error(decl, "Инициализация полей внутри struct не поддерживается")
 
-                current_type = TypeDesc.array_of(field_type) if isinstance(decl, VarDeclArrayNode) else field_type
+                current_type = field_type
                 if decl.name.name in struct_desc.fields:
                     semantic_error(decl.name, f"Поле {decl.name.name} уже объявлено в struct {struct_desc.name}")
 
