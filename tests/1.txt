@@ -1,4 +1,4 @@
-string www = 7;
+string www, mmm = 7;
 int input_int(string name) {
     if (name != "") {
         print("Введите " + name + ": ");
@@ -26,7 +26,7 @@ float b = input_float("b"), c = input_float("c");  /* comment 1
 int d = input_int("d");
 */
 for (int i = 0, j = 8; ((i <= 5)) && g; print(5))
-    for(int aboba = 0; a < b;)
+    for(int aboba = 0; a < b; aboba++)
         if (a > 7 + b) {
             c = a + b * (2 - 1) + 0;  // comment 2
             string bb = "98\tура";
@@ -35,7 +35,15 @@ for (int i = 0, j = 8; ((i <= 5)) && g; print(5))
             print((c + 1) + " " + 89.89);
 
 println("А сейчас бесконечный цикл :)");
-for(bool i = true;;) ;
-
 int z;
 z=0;
+
+struct Amogus {
+    int a, b;
+    char c;
+    string d[][];
+};
+
+Amogus m;
+string test[];
+m.d = test;

@@ -145,6 +145,15 @@ class TypeSimpleDoubleNode(TypeNode):
         return "double"
 
 
+class TypeSimpleFloatNode(TypeNode):
+    @property
+    def desc(self) -> str:
+        return "float"
+
+    def __str__(self) -> str:
+        return "float"
+
+
 class TypeSimpleVoidNode(TypeNode):
     @property
     def desc(self) -> str:
@@ -264,7 +273,7 @@ class VarDeclSimpleNode(VarDeclNode):
         return (self.name,)
 
     def __str__(self) -> str:
-        return f"decl {self.name}"
+        return f"decl"
 
 
 class VarDeclArrayNode(VarDeclNode):
@@ -277,7 +286,7 @@ class VarDeclArrayNode(VarDeclNode):
         return (self.name,)
 
     def __str__(self) -> str:
-        return f"decl {self.name}[]"
+        return f"decl []"
 
 
 class VarInitNode(VarDeclNode):
@@ -291,7 +300,7 @@ class VarInitNode(VarDeclNode):
         return self.name, self.value
 
     def __str__(self) -> str:
-        return f"init {self.name}"
+        return f"init"
 
 
 class VarInitArrayNode(VarDeclNode):
@@ -305,7 +314,7 @@ class VarInitArrayNode(VarDeclNode):
         return self.name, self.value
 
     def __str__(self) -> str:
-        return f"init {self.name}[]"
+        return f"init []"
 
 
 class CreateVarNode(AstNode):
@@ -329,7 +338,10 @@ class StmtNode(AstNode):
 class StmtListNode(StmtNode):
     def __init__(self, *stmts: AstNode):
         super().__init__()
-        self.stmts = stmts[0] if len(stmts) == 1 and isinstance(stmts[0], tuple) else stmts
+        # self.stmts = stmts[0] if len(stmts) == 1 and isinstance(stmts[0], tuple) else stmts
+        self.stmts = stmts
+        if not isinstance(self.stmts, tuple):
+            self.stmts = (self.stmts,)
         self.program = False
 
     @property
@@ -462,7 +474,7 @@ class ConditionIfNode(AstNode):
 
     @property
     def childs(self) -> Tuple[AstNode, ...]:
-        return (self.condition, *self.branches)
+        return self.condition, *self.branches
 
     def __str__(self) -> str:
         return "if"

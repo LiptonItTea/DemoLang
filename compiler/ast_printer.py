@@ -98,8 +98,8 @@ class AstPrinter:
         elif node.node_type:
             semantic_info = str(node.node_type)
 
-        if isinstance(node, FuncCallNode) and getattr(node.entity, "node_ident", None):
-            semantic_info += f" // {node.entity.node_ident}"
+        # if isinstance(node, FuncCallNode) and getattr(node.entity, "node_ident", None):
+        #     semantic_info += f" // {node.entity.node_ident}"
 
         if name and semantic_info:
             name += f" : {semantic_info}"

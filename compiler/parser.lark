@@ -20,6 +20,7 @@ sq_string: /'[^']*'/
      | "bool"   -> type_simple_bool
      | "string" -> type_simple_string
      | "double" -> type_simple_double
+     | "float"  -> type_simple_float
      | "void"   -> type_simple_void
      | ident    -> type_custom
 
@@ -122,18 +123,18 @@ struct_def: "struct" ident body
 
 ?for_init: create_var
          | rvalue
-         |
+         | // empty
 
 ?for_cond: rvalue
-         |
+         | // empty
 
 ?for_next: rvalue
-         |
+         | // empty
 
-?condition: "if" "(" rvalue ")" (stmt_closed | body) ("else" (stmt_closed | body))? -> condition_if
-          | "while" "(" rvalue ")" (stmt_closed | body) -> condition_while
-          | "do" (stmt_closed | body) "while" "(" rvalue ")" ";" -> condition_do_while
-          | "for" "(" for_init ";" for_cond ";" for_next ")" (stmt_closed | body) -> condition_for
+?condition: "if" "(" rvalue ")" (stmt_closed | condition | body) ("else" (stmt_closed | condition | body))? -> condition_if
+          | "while" "(" rvalue ")" (stmt_closed | condition | body) -> condition_while
+          | "do" (stmt_closed | condition | body) "while" "(" rvalue ")" ";" -> condition_do_while
+          | "for" "(" for_init ";" for_cond ";" for_next ")" (stmt_closed | condition | body) -> condition_for
 
 ?stmt_general: stmt_closed
              | condition

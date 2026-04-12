@@ -13,6 +13,7 @@ class BaseType(Enum):
     VOID = "void"
     INT = "int"
     DOUBLE = "double"
+    FLOAT = "float"
     BOOL = "bool"
     STRING = "string"
     CHAR = "char"
@@ -21,10 +22,11 @@ class BaseType(Enum):
         return self.value
 
 
-VOID, INT, DOUBLE, BOOL, STRING, CHAR = (
+VOID, INT, DOUBLE, FLOAT, BOOL, STRING, CHAR = (
     BaseType.VOID,
     BaseType.INT,
     BaseType.DOUBLE,
+    BaseType.FLOAT,
     BaseType.BOOL,
     BaseType.STRING,
     BaseType.CHAR,
@@ -35,6 +37,7 @@ class TypeDesc:
     VOID: "TypeDesc"
     INT: "TypeDesc"
     DOUBLE: "TypeDesc"
+    FLOAT: "TypeDesc"
     BOOL: "TypeDesc"
     STRING: "TypeDesc"
     CHAR: "TypeDesc"
@@ -231,7 +234,7 @@ class IdentScope:
 
 
 STRINGLIKE_BASES = {STRING, CHAR}
-NUMERIC_BASES = {INT, DOUBLE, CHAR}
+NUMERIC_BASES = {INT, DOUBLE, FLOAT, CHAR}
 
 
 def semantic_error(node: AstNode | None, message: str) -> None:
@@ -258,13 +261,15 @@ def can_type_convert_to(from_type: TypeDesc, to_type: TypeDesc) -> bool:
     if from_type.is_custom or to_type.is_custom:
         return False
 
-    if to_type == TypeDesc.STRING and from_type.base_type in (INT, DOUBLE, BOOL, CHAR):
+    if to_type == TypeDesc.STRING and from_type.base_type in (INT, DOUBLE, FLOAT, BOOL, CHAR):
         return True
-    if from_type == TypeDesc.INT and to_type in (TypeDesc.DOUBLE, TypeDesc.BOOL, TypeDesc.CHAR):
+    if from_type == TypeDesc.INT and to_type in (TypeDesc.DOUBLE, TypeDesc.FLOAT, TypeDesc.BOOL, TypeDesc.CHAR):
         return True
     if from_type == TypeDesc.CHAR and to_type in (TypeDesc.INT, TypeDesc.STRING):
         return True
     if from_type == TypeDesc.DOUBLE and to_type == TypeDesc.STRING:
+        return True
+    if from_type == TypeDesc.FLOAT and to_type == TypeDesc.STRING:
         return True
     if from_type == TypeDesc.BOOL and to_type == TypeDesc.STRING:
         return True
@@ -299,6 +304,8 @@ def resolve_type(node: TypeNode, scope: IdentScope) -> TypeDesc:
         result = TypeDesc.STRING
     elif isinstance(node, TypeSimpleDoubleNode):
         result = TypeDesc.DOUBLE
+    elif isinstance(node, TypeSimpleFloatNode):
+        result = TypeDesc.FLOAT
     elif isinstance(node, TypeSimpleVoidNode):
         result = TypeDesc.VOID
     elif isinstance(node, TypeCustomNode):
@@ -330,10 +337,12 @@ def ensure_assignable(node: AstNode) -> None:
 def convert_numeric(expr: AstNode, target: TypeDesc) -> AstNode:
     if expr.node_type == target:
         return expr
-    if expr.node_type == TypeDesc.CHAR and target in (TypeDesc.INT, TypeDesc.DOUBLE):
-        return type_convert(expr, TypeDesc.INT if target == TypeDesc.INT else TypeDesc.DOUBLE)
+    if expr.node_type == TypeDesc.CHAR and target in (TypeDesc.INT, TypeDesc.DOUBLE, TypeDesc.FLOAT):
+        return type_convert(expr, TypeDesc.INT if target == TypeDesc.INT else TypeDesc.DOUBLE if target == TypeDesc.DOUBLE else TypeDesc.FLOAT)
     if expr.node_type == TypeDesc.INT and target == TypeDesc.DOUBLE:
         return type_convert(expr, TypeDesc.DOUBLE)
+    if expr.node_type == TypeDesc.INT and target == TypeDesc.FLOAT:
+        return type_convert(expr, TypeDesc.FLOAT)
     return expr
 
 
@@ -346,7 +355,7 @@ def align_numeric_pair(left: AstNode, right: AstNode, node: AstNode, *, int_only
         right = type_convert(right, TypeDesc.INT, node)
         return left, right, TypeDesc.INT
 
-    target = TypeDesc.DOUBLE if TypeDesc.DOUBLE in (left.node_type, right.node_type) else TypeDesc.INT
+    target = TypeDesc.DOUBLE if TypeDesc.DOUBLE in (left.node_type, right.node_type) else TypeDesc.FLOAT if TypeDesc.FLOAT in (left.node_type, right.node_type) else TypeDesc.INT
     left = convert_numeric(left, target)
     right = convert_numeric(right, target)
     if left.node_type == TypeDesc.CHAR:
@@ -440,7 +449,7 @@ class SemanticChecker:
 
     @visitor.when(NumNode)
     def semantic_check(self, node: NumNode, scope: IdentScope):
-        node.node_type = TypeDesc.DOUBLE if isinstance(node.value, float) else TypeDesc.INT
+        node.node_type = TypeDesc.FLOAT if isinstance(node.value, float) else TypeDesc.INT
 
     @visitor.when(StringNode)
     def semantic_check(self, node: StringNode, scope: IdentScope):
@@ -760,7 +769,12 @@ class SemanticChecker:
         struct_desc = StructDesc(node.name.name, {})
         scope.add_type(struct_desc)
 
-        for stmt in node.body.stmts:
+        if not isinstance(node.body, StmtListNode):
+            body_stmts = [node.body]
+        else:
+            body_stmts = node.body.stmts
+
+        for stmt in body_stmts:
             if not isinstance(stmt, CreateVarNode):
                 semantic_error(stmt, "Внутри struct допускаются только объявления полей")
 
@@ -812,6 +826,7 @@ def prepare_global_scope() -> IdentScope:
         IdentDesc("read", TypeDesc.function(TypeDesc.STRING, ())),
         IdentDesc("to_int", TypeDesc.function(TypeDesc.INT, (TypeDesc.STRING,))),
         IdentDesc("to_double", TypeDesc.function(TypeDesc.DOUBLE, (TypeDesc.STRING,))),
+        IdentDesc("to_float", TypeDesc.function(TypeDesc.FLOAT, (TypeDesc.STRING,))),
         IdentDesc("print", TypeDesc.function(TypeDesc.VOID, ()), variadic=True),
         IdentDesc("println", TypeDesc.function(TypeDesc.VOID, ()), variadic=True),
     )
