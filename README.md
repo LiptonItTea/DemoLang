@@ -1,0 +1,57 @@
+# Demo language
+C-like language that supports structures and multidimensional arrays.
+
+# TODO
+- [x] Abstract syntax tree
+- [x] Semantic check
+- [ ] Compilation
+
+# Example program
+```
+string www, mmm = 7;
+int input_int(string name) {
+    if (name != "") {
+        print("Введите " + name + ": ");
+    }
+    return to_int(read());
+}
+float input_float(string name) {
+    string n1 = name;  // index = 0
+    if (name != "") {
+        string n2 = n1;  // index = 1
+        print("Введите " + n2 + ": ");
+    }
+    return to_float(read());
+}
+
+int g, g2 = g, g4 = 90;
+
+while (g > -(3)) {
+    int g5 = ++g + 1;
+    print(g5);
+}
+
+int a = input_int("a");
+float b = input_float("b"), c = input_float("c");  /* comment 1
+int d = input_int("d");
+*/
+for (int i = 0, j = 8; ((i <= 5)) && g; print(5))
+    for(int aboba = 0; a < b; aboba++)
+        if (a > 7 + b) {
+            c = a + b * (2 - 1) + 0;  // comment 2
+            string bb = "98\tура";
+        }
+        else if (a)
+            print((c + 1) + " " + 89.89);
+int z;
+z=0;
+
+struct Amogus {
+    int a, b;
+    char c;
+    float[][] d;
+};
+
+Amogus m;
+m.d[0] = float[5];
+```
