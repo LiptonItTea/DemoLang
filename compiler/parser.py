@@ -57,6 +57,12 @@ class ASTBuilder(Transformer):
             result = TypeArrNode(result)
         return result
 
+    def array_alloc_dim(self, value=None) -> ArrayAllocDimNode:
+        return ArrayAllocDimNode(value)
+
+    def array_alloc(self, base_type: TypeNode, *dims) -> ArrayAllocNode:
+        return ArrayAllocNode(base_type, *dims)
+
     def type_custom(self, ident: IdentNode) -> TypeCustomNode:
         return TypeCustomNode(ident)
 

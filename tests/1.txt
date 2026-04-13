@@ -45,5 +45,4 @@ struct Amogus {
 };
 
 Amogus m;
-int[][] test;
-m.d = test;
+m.d[0] = float[5];

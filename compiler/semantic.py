@@ -322,6 +322,13 @@ def resolve_type(node: TypeNode, scope: IdentScope) -> TypeDesc:
     return result
 
 
+def build_array_type(base_type: TypeDesc, dimensions: int) -> TypeDesc:
+    result = base_type
+    for _ in range(dimensions):
+        result = TypeDesc.array_of(result)
+    return result
+
+
 def get_assignment_target_type(node: AstNode, scope: IdentScope) -> TypeDesc:
     node.semantic_check(SemanticChecker(), scope)
     if node.node_type is None or node.node_type.func:
@@ -475,6 +482,34 @@ class SemanticChecker:
     def semantic_check(self, node: TypeConvertNode, scope: IdentScope):
         node.value.semantic_check(self, scope)
         node.node_type = node.type
+
+    @visitor.when(ArrayAllocDimNode)
+    def semantic_check(self, node: ArrayAllocDimNode, scope: IdentScope):
+        if node.size is not None:
+            node.size.semantic_check(self, scope)
+            node.size = type_convert(node.size, TypeDesc.INT, node, "размер массива")
+        node.node_type = TypeDesc.VOID
+
+    @visitor.when(ArrayAllocNode)
+    def semantic_check(self, node: ArrayAllocNode, scope: IdentScope):
+        base_type = resolve_type(node.base_type, scope)
+        if base_type == TypeDesc.VOID:
+            semantic_error(node.base_type, "Нельзя создавать массив элементов типа void")
+
+        saw_sized = False
+        saw_empty = False
+        for dim in node.dims:
+            if dim.size is None:
+                if not saw_sized:
+                    semantic_error(dim, "Первая размерность массива должна быть задана")
+                saw_empty = True
+            else:
+                if saw_empty:
+                    semantic_error(dim, "Пустые размерности массива могут идти только в конце")
+                saw_sized = True
+            dim.semantic_check(self, scope)
+
+        node.node_type = build_array_type(base_type, len(node.dims))
 
     @visitor.when(CallArgListNode)
     def semantic_check(self, node: CallArgListNode, scope: IdentScope):

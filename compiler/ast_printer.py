@@ -35,6 +35,14 @@ class AstPrinter:
     def view_node(self, node: CreateVarNode) -> tuple[str, Sequence[AstNode]]:
         return f"declare {node.type}", node.var_decls
 
+    @visitor.when(ArrayAllocDimNode)
+    def view_node(self, node: ArrayAllocDimNode) -> tuple[str, Sequence[AstNode]]:
+        return ("[]", ()) if node.size is None else ("[size]", (node.size,))
+
+    @visitor.when(ArrayAllocNode)
+    def view_node(self, node: ArrayAllocNode) -> tuple[str, Sequence[AstNode]]:
+        return f"alloc {node.base_type}", node.dims
+
     @visitor.when(CallArgListNode)
     def view_node(self, node: CallArgListNode) -> tuple[str, Sequence[AstNode]]:
         return "args", node.args

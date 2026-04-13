@@ -26,6 +26,8 @@ sq_string: /'[^']*'/
 
 array_suffix: "[" "]"
 type: base_type array_suffix*
+array_alloc_dim: "[" rvalue? "]"
+array_alloc: base_type array_alloc_dim+
 
 create_var: type var_decl ("," var_decl)*
 
@@ -93,6 +95,7 @@ create_var: type var_decl ("," var_decl)*
              | postfix_expr "--" -> postfix_dec
 
 ?primary: num
+        | array_alloc
         | string
         | sq_string
         | ident

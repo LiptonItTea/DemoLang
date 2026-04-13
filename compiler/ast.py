@@ -193,6 +193,33 @@ class TypeArrNode(TypeNode):
         return self.desc
 
 
+class ArrayAllocDimNode(AstNode):
+    def __init__(self, size: AstNode | None = None):
+        super().__init__()
+        self.size = size
+
+    @property
+    def childs(self) -> Tuple[AstNode, ...]:
+        return () if self.size is None else (self.size,)
+
+    def __str__(self) -> str:
+        return "[]" if self.size is None else "[size]"
+
+
+class ArrayAllocNode(AstNode):
+    def __init__(self, base_type: TypeNode, *dims: ArrayAllocDimNode):
+        super().__init__()
+        self.base_type = base_type
+        self.dims = dims[0] if len(dims) == 1 and isinstance(dims[0], tuple) else dims
+
+    @property
+    def childs(self) -> Tuple[AstNode, ...]:
+        return self.base_type, *self.dims
+
+    def __str__(self) -> str:
+        return "array alloc"
+
+
 class Assign(Enum):
     ASSIGN = "="
     ASSIGN_ADD = "+="
