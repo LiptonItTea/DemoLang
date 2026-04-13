@@ -6,7 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="c1270534-d35f-4948-9f29-2c02bb505e43" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/1.txt" beforeDir="false" afterPath="$PROJECT_DIR$/tests/1.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -296,7 +295,8 @@
       <workItem from="1775974292675" duration="3479000" />
       <workItem from="1775989728362" duration="25000" />
       <workItem from="1776013156847" duration="5597000" />
-      <workItem from="1776064050010" duration="646000" />
+      <workItem from="1776064050010" duration="1741000" />
+      <workItem from="1776065831481" duration="415000" />
     </task>
     <servers />
   </component>
@@ -325,7 +325,7 @@
     </watches-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/lab2$run_py___tests_1_txt.coverage" NAME="run.py ./tests/1.txt Coverage Results" MODIFIED="1776064526873" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/lab2$run_py___tests_1_txt.coverage" NAME="run.py ./tests/1.txt Coverage Results" MODIFIED="1776065653886" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
   <component name="debuggerHistoryManager">
     <expressions id="watch">
